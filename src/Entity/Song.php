@@ -76,4 +76,19 @@ class Song
 
         return $this;
     }
+
+
+    /**
+     * Set the value of album
+     *
+     * @param Collection $album
+     *
+     * @return self
+     */
+    public function setAlbum(Collection $album): self
+    {
+        $this->album = $album;
+
+        return $this;
+    }
 }

@@ -63,22 +63,23 @@ class SongController extends AbstractController
     {
         $song = $serializer->deserialize($request->getContent(), Song::class, 'json');
 
-        // Retrieve the album ID from the request
-        // $data = json_decode($request->getContent(), true);
-        // $albumId = $data['album_id'] ?? null;
 
-        // if ($albumId) {
-        //     // Fetch the album (Record entity) by ID
-        //     $album = $recordRepository->find($albumId);
+        $song->setAlbum(new ArrayCollection());
 
-        //     // If album is not found, return a 404 error
-        //     if (!$album) {
-        //         return new JsonResponse(['message' => 'Album not found'], JsonResponse::HTTP_NOT_FOUND);
-        //     }
+        $content = $request->toArray();
+        $idAlbums = $content['idAlbums'] ?? [];
 
-        //     // Link the album to the song
-        //     $song->addAlbum($album);
-        // }
+
+        foreach ($idAlbums as $idAlbum) {
+            $album = $recordRepository->find($idAlbum);
+            if ($album) {
+                $song->addAlbum($album);
+            }
+        }
+
+
+
+        $song->addAlbum($recordRepository->find($idAlbum));
 
         $errors = $validator->validate($song);
         if ($errors->count() > 0) {
