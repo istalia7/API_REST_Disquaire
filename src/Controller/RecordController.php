@@ -19,9 +19,24 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use Nelmio\ApiDocBundle\Annotation\Security;
+use OpenApi\Attributes as OA;
 
 class RecordController extends AbstractController
 {
+    #[OA\Get(
+        path: "/api/records",
+        summary: "Cette méthode permet de Récupérer tous les disques",
+        parameters: [
+            new OA\Parameter(name: "page", in: "query", schema: new OA\Schema(type: "integer"), description: "La page que l'on veut récupérer"),
+            new OA\Parameter(name: "limit", in: "query", schema: new OA\Schema(type: "integer"), description: "Le nombre de disques que l'on veut récupérer par page")
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "Retourne la liste des disques", content: new OA\JsonContent(type: "array", items: new OA\Items(ref: new Model(type: Record::class, groups: ["getRecords"]))))
+        ],
+        tags: ["Records"]
+    )]
     #[Route('/api/records', name: 'record', methods: ['GET'])]
     public function getAllRecords(RecordRepository $recordRepository, SerializerInterface $serializer, Request $request, TagAwareCacheInterface $cache): JsonResponse
     {
@@ -38,6 +53,18 @@ class RecordController extends AbstractController
         return new JsonResponse($jsonRecordList, Response::HTTP_OK, [], true);
     }
 
+    #[OA\Get(
+        path: "/api/record/{id}",
+        summary: "Cette méthode permet de récupérer les détails d'un disque",
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", schema: new OA\Schema(type: "integer"), description: "L'id du disque que l'on veut récupérer")
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "Retourne les détails d'un disque", content: new OA\JsonContent(ref: new Model(type: Record::class, groups: ["getRecords"])))
+        ],
+        tags: ["Records"]
+
+    )]
     #[Route('/api/record/{id}', name: 'recordDetail', methods: ['GET'])]
     public function getRecordDetail(Record $record, SerializerInterface $serializer): JsonResponse
     {
@@ -46,6 +73,17 @@ class RecordController extends AbstractController
         return new JsonResponse($jsonRecord, Response::HTTP_OK, ['accept' => 'json'], true);
     }
 
+    #[OA\Delete(
+        path: "/api/record/{id}",
+        summary: "Cette méthode permet de supprimer un disque",
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", schema: new OA\Schema(type: "integer", description: "L'id du disque à supprimer"))
+        ],
+        responses: [
+            new OA\Response(response: 204, description: "Disque supprimé")
+        ],
+        tags: ["Records"]
+    )]
     #[Route('/api/record/{id}', name: 'deleteRecord', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN', message: "Vous n'avez pas les droits suffisants pour supprimer un disque")]
     public function deleteRecord(Record $record, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
@@ -57,6 +95,26 @@ class RecordController extends AbstractController
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
+    #[OA\Post(
+        path: "/api/records",
+        summary: "Cette méthode permet de créer un disque",
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'application/json',
+                schema: new OA\Schema(
+                    type: 'object',
+                    required: ['name', 'price', 'idSinger'],
+                    properties: [
+                        new OA\Property(property: 'name', type: 'string', example: 'NomDisque'),
+                        new OA\Property(property: 'price', type: 'decimal', example: 24.99),
+                        new OA\Property(property: 'idSinger', type: 'integer')
+                    ]
+                )
+            )
+        ),
+        tags: ["Records"]
+    )]
     #[Route('/api/records', name: 'createRecord', methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN', message: "Vous n'avez pas les droits suffisants pour créer un disque")]
     public function createRecord(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, SingerRepository $singerRepository, ValidatorInterface $validator, SongRepository $songRepository)
@@ -84,6 +142,25 @@ class RecordController extends AbstractController
         return new JsonResponse($jsonRecord, Response::HTTP_CREATED, ["Location" => $location], true);
     }
 
+    #[OA\Put(
+        path: "/api/record/{id}",
+        summary: "Cette méthode permet de mettre à jour un disque",
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: "application/json",
+                schema: new OA\Schema(
+                    type: "object",
+                    required: ["name", "price"],
+                    properties: [
+                        new OA\Property(property: "name", type: "string", example: "NomDisque"),
+                        new OA\Property(property: "price", type: "decimal", example: 24.99)
+                    ]
+                )
+            )
+        ),
+        tags: ["Records"]
+    )]
     #[Route('/api/record/{id}', name: "updateRecord", methods: ['PUT'])]
     #[IsGranted('ROLE_ADMIN', message: "Vous n'avez pas les droits suffisants pour mettre à jour une chanson")]
     public function updateRecord(Request $request, SerializerInterface $serializer, Record $currentRecord, EntityManagerInterface $em, SingerRepository $singerRepository, TagAwareCacheInterface $cache, ValidatorInterface $validator)

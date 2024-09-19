@@ -9,7 +9,37 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use Hateoas\Configuration\Annotation as Hateoas;
 
+/**
+ * @Hateoas\Relation(
+ *      "self",
+ *      href = @Hateoas\Route(
+ *          "recordDetail",
+ *          parameters = { "id" = "expr(object.getId())" }
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getRecords")
+ * 
+ * )
+ * 
+ * @Hateoas\Relation(
+ *      "delete",
+ *      href = @Hateoas\Route(
+ *          "deleteRecord",
+ *          parameters = { "id" = "expr(object.getId())" },
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getRecords", excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
+ * )
+ * 
+ * @Hateoas\Relation(
+ *      "update",
+ *      href = @Hateoas\Route(
+ *      "updateRecord",
+ *      parameters = { "id" = "expr(object.getId())" },
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getRecords", excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
+ * )
+ */
 #[ORM\Entity(repositoryClass: RecordRepository::class)]
 class Record
 {

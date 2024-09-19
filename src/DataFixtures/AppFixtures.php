@@ -57,6 +57,7 @@ class AppFixtures extends Fixture
             $song = new Song;
             $song->setTitle('Titre ' . $i);
             $song->addAlbum($listRecord[array_rand($listRecord)]);
+            $song->setLengthInSeconds(random_int(1, 600));
             $manager->persist($song);
         }
         $manager->flush();

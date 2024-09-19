@@ -8,7 +8,38 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use Hateoas\Configuration\Annotation as Hateoas;
+use JMS\Serializer\Annotation\Since;
 
+/**
+ * @Hateoas\Relation(
+ *      "self",
+ *      href= @Hateoas\Route(
+ *          "songDetail",
+ *          parameters = { "id" = "expr(object.getId())" },
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getSongs")
+ * )
+ * 
+ * @Hateoas\Relation(
+ *      "delete",
+ *      href = @Hateoas\Route(
+ *          "deleteSong",
+ *          parameters = { "id" = "expr(object.getId())" },
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getSongs", excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
+ * )
+ * 
+ * @Hateoas\Relation(
+ *      "update",
+ *      href = @Hateoas\Route(
+ *          "updateSong",
+ *          parameters = { "id" = "expr(object.getId())" },
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups="getSongs", excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
+ * )
+ * 
+ */
 #[ORM\Entity(repositoryClass: SongRepository::class)]
 class Song
 {
@@ -23,6 +54,11 @@ class Song
     #[Assert\NotBlank(message: "Le titre de la chanson ne peut pas être vide")]
     #[Assert\Type('string')]
     private ?string $title = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(["getSongs"])]
+    #[Since("2.0")]
+    private ?int $lengthInSeconds = null;
 
     /**
      * @var Collection<int, Record>
@@ -88,6 +124,18 @@ class Song
     public function setAlbum(Collection $album): self
     {
         $this->album = $album;
+
+        return $this;
+    }
+
+    public function getLengthInSeconds(): ?int
+    {
+        return $this->lengthInSeconds;
+    }
+
+    public function setLengthInSeconds(int $lengthInSeconds): static
+    {
+        $this->lengthInSeconds = $lengthInSeconds;
 
         return $this;
     }
