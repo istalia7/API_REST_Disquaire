@@ -7,9 +7,11 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Persistence\Event\LifecycleEventArgs;
 use JMS\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 use Hateoas\Configuration\Annotation as Hateoas;
+use Doctrine\ORM\EntityManagerInterface;
 
 /**
  * @Hateoas\Relation(
@@ -40,6 +42,7 @@ use Hateoas\Configuration\Annotation as Hateoas;
  *      exclusion = @Hateoas\Exclusion(groups="getRecords", excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
  * )
  */
+#[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: RecordRepository::class)]
 class Record
 {
@@ -69,7 +72,7 @@ class Record
     /**
      * @var Collection<int, Song>
      */
-    #[ORM\ManyToMany(targetEntity: Song::class, mappedBy: 'album', cascade: ['remove'])]
+    #[ORM\ManyToMany(targetEntity: Song::class, mappedBy: 'album')]
     #[Groups(["getSongOfAlbum"])]
     private Collection $songs;
 
@@ -144,5 +147,16 @@ class Record
         }
 
         return $this;
+    }
+
+    #[ORM\PreRemove]
+    public function checkOrphanedSongs(LifecycleEventArgs $args): void
+    {
+        $entityManager = $args->getObjectManager();
+        foreach ($this->songs as $song) {
+            if ($song->getAlbum()->count() === 1) {
+                $entityManager->remove($song);
+            }
+        }
     }
 }
